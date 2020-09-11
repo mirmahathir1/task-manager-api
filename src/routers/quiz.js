@@ -65,4 +65,32 @@ router.get('/quizzes/me',auth,async (req,res)=>{
     }
 })
 
+router.patch('/quizzes/:id',auth, async (req, res) => {
+    const updates = Object.keys(req.body)
+    // const allowedUpdates = ['description', 'completed']
+    // const isValidOperation = updates.every((update) => allowedUpdates.includes(update))
+
+    // if (!isValidOperation) {
+    //     return res.status(400).send({ error: 'Invalid updates!' })
+    // }
+
+    try {
+        const quiz = await Quiz.findOne({_id:req.params.id,owner:req.user._id})
+        //const task = await Task.findById(req.params.id)
+
+
+
+        if (!quiz) {
+            return res.status(404).send()
+        }
+
+        updates.forEach((update) => quiz[update] = req.body[update])
+        await quiz.save()
+
+        res.send(quiz)
+    } catch (e) {
+        res.status(400).send(e)
+    }
+})
+
 module.exports = router
