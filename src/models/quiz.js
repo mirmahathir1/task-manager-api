@@ -22,18 +22,20 @@ const quizSchema = new mongoose.Schema({
     },
 
     questions: [{
-
         description:{
             type:String,
             required: true,
             trim: true,
         },
+        type:{
+            type:String,
+            required: true,
+        },
         options: {
             type: Array
         },
         answers:{
-            type: mongoose.Schema.Types.Mixed,
-            required: true,
+            type: Array,
         },
 
     }],
