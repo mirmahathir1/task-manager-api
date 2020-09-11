@@ -20,7 +20,9 @@ const quizSchema = new mongoose.Schema({
         required: true,
         ref: 'User'
     },
-
+    tags:{
+        type: Array,
+    },
     questions: [{
         description:{
             type:String,
@@ -31,6 +33,7 @@ const quizSchema = new mongoose.Schema({
             type:String,
             required: true,
         },
+
         options: {
             type: Array
         },
