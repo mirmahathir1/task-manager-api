@@ -20,8 +20,9 @@ const quizSchema = new mongoose.Schema({
         required: true,
         ref: 'User'
     },
+
     tags:{
-        type: Array,
+        type: [String],
     },
     questions: [{
         description:{
@@ -38,10 +39,10 @@ const quizSchema = new mongoose.Schema({
             default: 1,
         },
         options: {
-            type: Array
+            type: [String]
         },
         answers:{
-            type: Array,
+            type: [String],
         },
 
     }],
@@ -60,6 +61,13 @@ const quizSchema = new mongoose.Schema({
 },{
     timestamps: true
 })
+
+// quizSchema.virtual('ownerName', {
+//     ref: 'User',
+//     localField: 'owner',
+//     foreignField: '_id'
+// })
+
 
 const Quiz = mongoose.model('Quiz', quizSchema)
 
