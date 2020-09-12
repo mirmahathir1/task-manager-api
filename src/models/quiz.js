@@ -33,7 +33,10 @@ const quizSchema = new mongoose.Schema({
             type:String,
             required: true,
         },
-
+        marks:{
+            type: Number,
+            default: 1,
+        },
         options: {
             type: Array
         },
@@ -42,6 +45,18 @@ const quizSchema = new mongoose.Schema({
         },
 
     }],
+    responses: [{
+        low:{
+            type: Number,
+        },
+        high:{
+            type: Number
+        },
+        message:{
+            type: String,
+            trim: true
+        }
+    }]
 },{
     timestamps: true
 })
