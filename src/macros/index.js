@@ -1,5 +1,5 @@
 module.exports= {
-    quizTypes: {
+    questionTypes: {
         SINGLE:"SINGLE",
         MCQ:"MCQ",
         TEXT:"TEXT"

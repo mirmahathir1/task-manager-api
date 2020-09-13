@@ -1,11 +1,14 @@
+const mongoose = require('mongoose')
 const express = require('express')
 const Quiz = require('../models/quiz')
+const Submission = require('../models/submission')
+
 const auth = require('../middleware/auth')
 const router = new express.Router()
 const macro = require('../macros/index')
 router.post('/quizzes', auth, async (req, res) => {
     const quizData = {...req.body, owner: req.user._id};
-    quizData.startTime = new Date(quizData.startTime*1000)
+    quizData.startTime = new Date(quizData.startTime * 1000)
 
     const quiz = new Quiz(quizData)
 
@@ -33,7 +36,7 @@ router.delete('/quizzes/:id', auth, async (req, res) => {
 
 })
 
-router.get('/quizzes/me',auth,async (req,res)=>{
+router.get('/quizzes/me', auth, async (req, res) => {
     // const match={}
     // const sort = {}
 
@@ -65,7 +68,7 @@ router.get('/quizzes/me',auth,async (req,res)=>{
     }
 })
 
-router.patch('/quizzes/:id',auth, async (req, res) => {
+router.patch('/quizzes/:id', auth, async (req, res) => {
     const updates = Object.keys(req.body)
     // const allowedUpdates = ['description', 'completed']
     // const isValidOperation = updates.every((update) => allowedUpdates.includes(update))
@@ -75,9 +78,8 @@ router.patch('/quizzes/:id',auth, async (req, res) => {
     // }
 
     try {
-        const quiz = await Quiz.findOne({_id:req.params.id,owner:req.user._id})
+        const quiz = await Quiz.findOne({_id: req.params.id, owner: req.user._id})
         //const task = await Task.findById(req.params.id)
-
 
 
         if (!quiz) {
@@ -93,7 +95,7 @@ router.patch('/quizzes/:id',auth, async (req, res) => {
     }
 })
 
-router.get('/quizzes',auth,async (req,res)=>{
+router.get('/quizzes', auth, async (req, res) => {
     // const match={}
     // const sort = {}
 
@@ -105,18 +107,17 @@ router.get('/quizzes',auth,async (req,res)=>{
     //     const parts = req.query.sortBy.split(':')
     //     sort[parts[0]]= parts[1]==='desc'?-1:1
     // }
-    let find={}
+    let find = {}
 
-    if(req.query.title){
+    if (req.query.title) {
         // console.log("title found")
-        find.title={ "$regex": req.query.title, "$options": "i" }
+        find.title = {"$regex": req.query.title, "$options": "i"}
     }
 
-    if(req.query.tag){
+    if (req.query.tag) {
         // console.log("tag found")
-        find.tags={ "$regex": req.query.tag,"$options": "i" }
+        find.tags = {"$regex": req.query.tag, "$options": "i"}
     }
-
 
 
     const select = "tags _id title duration password startTime owner"
@@ -132,33 +133,33 @@ router.get('/quizzes',auth,async (req,res)=>{
             .limit(parseInt(req.query.limit))
             .select(select)
 
-        quizzes = quizzes.map((quiz)=>{
+        quizzes = quizzes.map((quiz) => {
             let newQuiz = quiz.toObject()
-            newQuiz.access=quiz.password===macro.NO_PASSWORD?macro.quizAccess.PUBLIC:macro.quizAccess.PRIVATE
-            newQuiz.rating = Math.round(Math.random() * 5 * 1000)/1000
-            newQuiz.difficulty = Math.round(Math.random() * 10 * 1000)/1000
+            newQuiz.access = quiz.password === macro.NO_PASSWORD ? macro.quizAccess.PUBLIC : macro.quizAccess.PRIVATE
+            newQuiz.rating = Math.round(Math.random() * 5 * 1000) / 1000
+            newQuiz.difficulty = Math.round(Math.random() * 10 * 1000) / 1000
             delete newQuiz.password
             return newQuiz
         })
 
         res.send(quizzes)
-    }catch (e){
+    } catch (e) {
         console.log(e)
         res.status(400).send()
     }
 })
 
-router.get('/quizzes/:id',auth,async (req,res)=>{
+router.get('/quizzes/:id', auth, async (req, res) => {
     try {
         // console.log(req.params.id)
-        let quiz = await Quiz.findOne({_id:req.params.id})
-        if(!quiz){
-            return res.status(404).send({error:"quiz not found"})
+        let quiz = await Quiz.findOne({_id: req.params.id})
+        if (!quiz) {
+            return res.status(404).send({error: "quiz not found"})
         }
 
-        if(quiz.password!==macro.NO_PASSWORD
-            && quiz.password!==req.query.pwd){
-            return res.status(401).send({error:"password incorrect"})
+        if (quiz.password !== macro.NO_PASSWORD
+            && quiz.password !== req.query.pwd) {
+            return res.status(401).send({error: "password incorrect"})
         }
 
         quiz = quiz.toObject()
@@ -171,19 +172,117 @@ router.get('/quizzes/:id',auth,async (req,res)=>{
         delete quiz.updatedAt
         // delete quiz.
 
-        quiz.questions.forEach((question)=>{
-            if(question.type===macro.quizTypes.TEXT){
+        quiz.questions.forEach((question) => {
+            if (question.type === macro.quizTypes.TEXT) {
                 delete question.options
             }
             delete question.answers
         })
 
         res.send(quiz)
-    }
-    catch(e){
+    } catch (e) {
         console.log(e)
         res.status(400).send()
     }
+})
+
+router.post('/quizzes/:id', auth, async (req, res) => {
+    // 5f5d1df7027b057a84496e30
+    // let userSubmissions = [
+    //     {
+    //         questionId: "5f5d1df7027b057a84496e33",
+    //         answers: ["3.14159"]
+    //     },
+    //     {
+    //         questionId: "5f5d1df7027b057a84496e32",
+    //         answers: ["Apple", "Strawberry"]
+    //     },
+    //     {
+    //         questionId: "5f5d1df7027b057a84496e31",
+    //         answers: ["India"]
+    //     }
+    // ]
+
+    let userSubmissions = req.body.userSubmissions
+
+    let correct = []
+    let incorrect = []
+    try {
+        let quiz = await Quiz.findOne({_id: req.params.id})
+
+        // console.log(quiz)
+
+        let marks = 0;
+
+        quiz.questions.forEach((question)=>{
+            let userSubmissionOfQuestion = userSubmissions.filter((userSubmission)=>{
+                return question._id.toString()===userSubmission.questionId
+            })[0]
+
+            // console.log(userSubmissionOfQuestion)
+
+            if(question.type===macro.questionTypes.MCQ){
+                let correctAnswerCount = question.answers.length
+
+                let userCorrectedCount = 0;
+
+                userSubmissionOfQuestion.answers.forEach((answer)=>{
+                    if(question.answers.includes(answer)){
+                        userCorrectedCount++;
+                    }else{
+                        userCorrectedCount = -1;
+                    }
+                })
+
+                if(userCorrectedCount===correctAnswerCount){
+                    correct.push(mongoose.Types.ObjectId(question._id))
+                    marks+=question.marks
+                }else{
+                    incorrect.push(mongoose.Types.ObjectId(question._id))
+                }
+
+            }else if(question.type===macro.questionTypes.SINGLE){
+                if(question.answers.includes(userSubmissionOfQuestion.answers[0])){
+                    correct.push(mongoose.Types.ObjectId(question._id))
+                    marks+=question.marks
+                }else{
+                    incorrect.push(mongoose.Types.ObjectId(question._id))
+                }
+            }else if(question.type===macro.questionTypes.TEXT){
+                if(question.answers.includes(userSubmissionOfQuestion.answers[0])){
+                    correct.push(mongoose.Types.ObjectId(question._id))
+                    marks+=question.marks
+                }else{
+                    incorrect.push(mongoose.Types.ObjectId(question._id))
+                }
+            }
+        })
+
+
+
+        userSubmissions.forEach((submission) => {
+            submission.questionId = mongoose.Types.ObjectId(submission.questionId);
+        })
+
+        let finalSubmission = {
+            quizId: mongoose.Types.ObjectId(req.params.id),
+            userId: req.user._id,
+            submissions: userSubmissions,
+            correct: correct,
+            incorrect: incorrect,
+            marks: marks
+        }
+
+        // console.log(finalSubmission)
+        let submission = new Submission(finalSubmission)
+        submission.save()
+
+        return res.status(201).send(submission)
+    } catch (e) {
+        console.log(e)
+        return res.status(500).send()
+    }
+
 })
 
 module.exports = router

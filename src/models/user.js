@@ -60,6 +60,12 @@ userSchema.virtual('quizzes', {
     foreignField: 'owner'
 })
 
+userSchema.virtual('submissions', {
+    ref: 'Submission',
+    localField: '_id',
+    foreignField: 'userId'
+})
+
 userSchema.methods.toJSON = function () {
     const user = this
     const userObject = user.toObject()

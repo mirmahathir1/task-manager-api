@@ -57,16 +57,17 @@ const quizSchema = new mongoose.Schema({
             type: String,
             trim: true
         }
-    }]
+    }],
+
 },{
     timestamps: true
 })
 
-// quizSchema.virtual('ownerName', {
-//     ref: 'User',
-//     localField: 'owner',
-//     foreignField: '_id'
-// })
+quizSchema.virtual('submissions', {
+    ref: 'Submission',
+    localField: '_id',
+    foreignField: 'quizId'
+})
 
 
 const Quiz = mongoose.model('Quiz', quizSchema)
