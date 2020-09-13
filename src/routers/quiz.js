@@ -173,7 +173,7 @@ router.get('/quizzes/:id', auth, async (req, res) => {
         // delete quiz.
 
         quiz.questions.forEach((question) => {
-            if (question.type === macro.quizTypes.TEXT) {
+            if (question.type === macro.questionTypes.TEXT) {
                 delete question.options
             }
             delete question.answers
