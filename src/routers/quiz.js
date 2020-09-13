@@ -143,7 +143,45 @@ router.get('/quizzes',auth,async (req,res)=>{
         res.send(quizzes)
     }catch (e){
         console.log(e)
-        res.status(500).send()
+        res.status(400).send()
+    }
+})
+
+router.get('/quizzes/:id',auth,async (req,res)=>{
+    try {
+        // console.log(req.params.id)
+        let quiz = await Quiz.findOne({_id:req.params.id})
+        if(!quiz){
+            return res.status(404).send({error:"quiz not found"})
+        }
+
+        if(quiz.password!==macro.NO_PASSWORD
+            && quiz.password!==req.query.pwd){
+            return res.status(401).send({error:"password incorrect"})
+        }
+
+        quiz = quiz.toObject()
+
+        delete quiz.tags
+        delete quiz.password
+        delete quiz.responses
+        delete quiz.owner
+        delete quiz.createdAt
+        delete quiz.updatedAt
+        // delete quiz.
+
+        quiz.questions.forEach((question)=>{
+            if(question.type===macro.quizTypes.TEXT){
+                delete question.options
+            }
+            delete question.answers
+        })
+
+        res.send(quiz)
+    }
+    catch(e){
+        console.log(e)
+        res.status(400).send()
     }
 })
 
