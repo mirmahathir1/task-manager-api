@@ -135,7 +135,8 @@ router.get('/quizzes',auth,async (req,res)=>{
         quizzes = quizzes.map((quiz)=>{
             let newQuiz = quiz.toObject()
             newQuiz.access=quiz.password===macro.NO_PASSWORD?macro.quizAccess.PUBLIC:macro.quizAccess.PRIVATE
-
+            newQuiz.rating = Math.round(Math.random() * 5 * 1000)/1000
+            newQuiz.difficulty = Math.round(Math.random() * 10 * 1000)/1000
             delete newQuiz.password
             return newQuiz
         })
