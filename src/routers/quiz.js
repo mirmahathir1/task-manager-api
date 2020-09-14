@@ -187,22 +187,6 @@ router.get('/quizzes/:id', auth, async (req, res) => {
 })
 
 router.post('/quizzes/:id', auth, async (req, res) => {
-    // 5f5d1df7027b057a84496e30
-    // let userSubmissions = [
-    //     {
-    //         questionId: "5f5d1df7027b057a84496e33",
-    //         answers: ["3.14159"]
-    //     },
-    //     {
-    //         questionId: "5f5d1df7027b057a84496e32",
-    //         answers: ["Apple", "Strawberry"]
-    //     },
-    //     {
-    //         questionId: "5f5d1df7027b057a84496e31",
-    //         answers: ["India"]
-    //     }
-    // ]
-
     let userSubmissions = req.body.userSubmissions
 
     let correct = []
@@ -275,7 +259,7 @@ router.post('/quizzes/:id', auth, async (req, res) => {
 
         // console.log(finalSubmission)
         let submission = new Submission(finalSubmission)
-        submission.save()
+        await submission.save()
 
         return res.status(201).send(submission)
     } catch (e) {
@@ -283,6 +267,23 @@ router.post('/quizzes/:id', auth, async (req, res) => {
         return res.status(500).send()
     }
 
+})
+
+router.post('/quizzes/review/:id',auth,async (req,res)=>{
+    try{
+        let submission = await Submission.findOne({_id: req.params.id})
+        if(!submission){
+            return res.status(404).send()
+        }
+        console.log(req.body.rating)
+        submission.rating=req.body.rating;
+
+        await submission.save()
+        res.send(submission)
+    }catch (e){
+        console.log(e)
+        return res.status(400).send(e)
+    }
 })
 
 module.exports = router
