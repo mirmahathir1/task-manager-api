@@ -14,6 +14,7 @@ router.post('/users', async (req, res) => {
         const token = await user.generateAuthToken()
         res.status(201).send({user, token})
     } catch (e) {
+        console.log(e)
         res.status(400).send(e)
     }
 })
@@ -24,6 +25,7 @@ router.post('/users/login', async (req, res) => {
         const token = await user.generateAuthToken()
         res.send({user, token})
     } catch (e) {
+        console.log(e)
         res.status(400).send()
     }
 })
@@ -37,6 +39,7 @@ router.post('/users/logout', auth, async (req, res) => {
 
         res.send()
     } catch (e) {
+        console.log(e)
         res.status(500).send()
     }
 })
@@ -47,6 +50,7 @@ router.post('/users/logoutAll', auth, async (req, res) => {
         await req.user.save()
         res.send()
     } catch (e) {
+        console.log(e)
         res.status(500).send()
     }
 })
@@ -69,6 +73,7 @@ router.patch('/users/me', auth, async (req, res) => {
         await req.user.save()
         res.send(req.user)
     } catch (e) {
+        console.log(e)
         res.status(400).send(e)
     }
 })
@@ -78,6 +83,7 @@ router.delete('/users/me', auth, async (req, res) => {
         await req.user.remove()
         res.send(req.user)
     } catch (e) {
+        console.log(e)
         res.status(500).send()
     }
 })
@@ -123,6 +129,7 @@ router.get('/users/:id/avatar',async (req,res)=>{
         res.set('Content-Type','image/jpg')
         res.send(user.avatar)
     }catch(e){
+        console.log(e)
         res.status(404).send("Not found")
     }
 })

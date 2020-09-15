@@ -17,7 +17,7 @@ router.post('/quizzes', auth, async (req, res) => {
         res.status(201).send(quiz)
     } catch (e) {
         console.log(e);
-        res.status(400).send(e)
+        res.status(400).send()
     }
 })
 
@@ -26,11 +26,12 @@ router.delete('/quizzes/:id', auth, async (req, res) => {
         const quiz = await Quiz.findOneAndDelete({_id: req.params.id, owner: req.user._id})
 
         if (!quiz) {
-            res.status(404).send()
+            res.status(404).send({message:"Quiz id not found"})
         }
 
         res.send()
     } catch (e) {
+        console.log(e)
         res.status(500).send()
     }
 
@@ -83,7 +84,7 @@ router.patch('/quizzes/:id', auth, async (req, res) => {
 
 
         if (!quiz) {
-            return res.status(404).send()
+            return res.status(404).send({message:"Quiz id not found"})
         }
 
         updates.forEach((update) => quiz[update] = req.body[update])
@@ -91,7 +92,8 @@ router.patch('/quizzes/:id', auth, async (req, res) => {
 
         res.send(quiz)
     } catch (e) {
-        res.status(400).send(e)
+        console.log(e)
+        res.status(400).send()
     }
 })
 
@@ -154,12 +156,12 @@ router.get('/quizzes/:id', auth, async (req, res) => {
         // console.log(req.params.id)
         let quiz = await Quiz.findOne({_id: req.params.id})
         if (!quiz) {
-            return res.status(404).send({error: "quiz not found"})
+            return res.status(404).send({message: "Quiz id not found"})
         }
 
         if (quiz.password !== macro.NO_PASSWORD
             && quiz.password !== req.query.pwd) {
-            return res.status(401).send({error: "password incorrect"})
+            return res.status(401).send({message: "Incorrect password"})
         }
 
         quiz = quiz.toObject()
@@ -273,7 +275,7 @@ router.post('/quizzes/review/:id',auth,async (req,res)=>{
     try{
         let submission = await Submission.findOne({_id: req.params.id})
         if(!submission){
-            return res.status(404).send()
+            return res.status(404).send({message:"Submission id not found"})
         }
         console.log(req.body.rating)
         submission.rating=req.body.rating;
@@ -282,7 +284,7 @@ router.post('/quizzes/review/:id',auth,async (req,res)=>{
         res.send(submission)
     }catch (e){
         console.log(e)
-        return res.status(400).send(e)
+        return res.status(400).send()
     }
 })
 
