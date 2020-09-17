@@ -134,6 +134,7 @@ router.get('/quizzes', auth, async (req, res) => {
 
         for(let i=0;i<quizzes.length;i++){
             await quizzes[i].populate('ownerInfo','name').execPopulate()
+            await quizzes[i].populate('submissions').execPopulate()
         }
 
         quizzes = quizzes.map((quiz) => {
@@ -141,6 +142,11 @@ router.get('/quizzes', auth, async (req, res) => {
             newQuiz.access = quiz.password === macro.NO_PASSWORD ? macro.quizAccess.PUBLIC : macro.quizAccess.PRIVATE
             newQuiz.rating = Math.round(Math.random() * 5 * 1000) / 1000
             newQuiz.difficulty = Math.round(Math.random() * 10 * 1000) / 1000
+            newQuiz.ownerName = newQuiz.ownerInfo[0].name
+            newQuiz.userCount = newQuiz.submissions.length
+            delete newQuiz.submissions
+            delete newQuiz.ownerInfo
+            delete newQuiz.id
             delete newQuiz.password
             return newQuiz
         })
