@@ -60,13 +60,25 @@ const quizSchema = new mongoose.Schema({
     }],
 
 },{
-    timestamps: true
+    timestamps: true,
+    toJSON: {
+        virtuals: true
+    },
+    toObject: {
+        virtuals: true
+    }
 })
 
 quizSchema.virtual('submissions', {
     ref: 'Submission',
     localField: '_id',
     foreignField: 'quizId'
+})
+
+quizSchema.virtual('ownerInfo',{
+    ref: 'User',
+    localField: 'owner',
+    foreignField: '_id'
 })
 
 

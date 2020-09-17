@@ -1,6 +1,8 @@
 const mongoose = require('mongoose')
 const express = require('express')
 const Quiz = require('../models/quiz')
+const User = require('../models/user')
+
 const Submission = require('../models/submission')
 
 const auth = require('../middleware/auth')
@@ -112,12 +114,10 @@ router.get('/quizzes', auth, async (req, res) => {
     let find = {}
 
     if (req.query.title) {
-        // console.log("title found")
         find.title = {"$regex": req.query.title, "$options": "i"}
     }
 
     if (req.query.tag) {
-        // console.log("tag found")
         find.tags = {"$regex": req.query.tag, "$options": "i"}
     }
 
@@ -125,15 +125,16 @@ router.get('/quizzes', auth, async (req, res) => {
     const select = "tags _id title duration password startTime owner"
 
     try {
-        // const quizzes = await Quiz.find(find).select('title description')
-        // questions createdAt updatedAt responses
 
-        //change password to a integer
         let quizzes = await Quiz.find(find)
             .sort('-createdAt')
             .skip(parseInt(req.query.skip))
             .limit(parseInt(req.query.limit))
             .select(select)
+
+        for(let i=0;i<quizzes.length;i++){
+            await quizzes[i].populate('ownerInfo','name').execPopulate()
+        }
 
         quizzes = quizzes.map((quiz) => {
             let newQuiz = quiz.toObject()
@@ -143,6 +144,7 @@ router.get('/quizzes', auth, async (req, res) => {
             delete newQuiz.password
             return newQuiz
         })
+
 
         res.send(quizzes)
     } catch (e) {
