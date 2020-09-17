@@ -122,7 +122,7 @@ router.get('/quizzes', auth, async (req, res) => {
     }
 
 
-    const select = "tags _id title duration password startTime owner"
+    const select = "tags _id title duration password startTime owner questions"
 
     try {
 
@@ -144,6 +144,9 @@ router.get('/quizzes', auth, async (req, res) => {
             newQuiz.difficulty = Math.round(Math.random() * 10 * 1000) / 1000
             newQuiz.ownerName = newQuiz.ownerInfo[0].name
             newQuiz.userCount = newQuiz.submissions.length
+            newQuiz.questionCount = newQuiz.questions.length
+
+            delete newQuiz.questions
             delete newQuiz.submissions
             delete newQuiz.ownerInfo
             delete newQuiz.id
