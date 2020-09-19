@@ -1,14 +1,19 @@
 const mongoose = require('mongoose')
 const express = require('express')
+const multer = require('multer')
 const Quiz = require('../models/quiz')
 const User = require('../models/user')
-
 const Submission = require('../models/submission')
-
 const auth = require('../middleware/auth')
 const router = new express.Router()
 const macro = require('../macros/index')
+
+const firebaseStorage = require('../db/firebaseConfig')
+
 router.post('/quizzes', auth, async (req, res) => {
+    console.log("req.body:",req.body)
+
+
     const quizData = {...req.body, owner: req.user._id};
     quizData.startTime = new Date(quizData.startTime * 1000)
 
@@ -24,11 +29,14 @@ router.post('/quizzes', auth, async (req, res) => {
 })
 
 router.delete('/quizzes/:id', auth, async (req, res) => {
+
+    console.log("req.params.id:",req.params.id)
+
     try {
         const quiz = await Quiz.findOneAndDelete({_id: req.params.id, owner: req.user._id})
 
         if (!quiz) {
-            res.status(404).send({message:"Quiz id not found"})
+            res.status(404).send({message: "Quiz id not found"})
         }
 
         res.send()
@@ -40,29 +48,10 @@ router.delete('/quizzes/:id', auth, async (req, res) => {
 })
 
 router.get('/quizzes/me', auth, async (req, res) => {
-    // const match={}
-    // const sort = {}
-
-    // if(req.query.completed){
-    //     match.completed = req.query.completed==='true'
-    // }
-
-    // if(req.query.sortBy){
-    //     const parts = req.query.sortBy.split(':')
-    //     sort[parts[0]]= parts[1]==='desc'?-1:1
-    // }
-
     try {
-        // const tasks = await Task.find({owner:req.user._id})
-        // res.send(tasks)
         await req.user.populate({
             path: 'quizzes',
-            // match,
-            // options:{
-            //     limit: parseInt(req.query.limit),
-            //     skip: parseInt(req.query.skip),
-            //     sort
-            // }
+
         }).execPopulate()
         res.send(req.user.quizzes)
     } catch (e) {
@@ -72,21 +61,17 @@ router.get('/quizzes/me', auth, async (req, res) => {
 })
 
 router.patch('/quizzes/:id', auth, async (req, res) => {
+    console.log("req.body:",req.body)
+    console.log("req.params.id:",req.params.id)
+
     const updates = Object.keys(req.body)
-    // const allowedUpdates = ['description', 'completed']
-    // const isValidOperation = updates.every((update) => allowedUpdates.includes(update))
-
-    // if (!isValidOperation) {
-    //     return res.status(400).send({ error: 'Invalid updates!' })
-    // }
-
     try {
         const quiz = await Quiz.findOne({_id: req.params.id, owner: req.user._id})
         //const task = await Task.findById(req.params.id)
 
 
         if (!quiz) {
-            return res.status(404).send({message:"Quiz id not found"})
+            return res.status(404).send({message: "Quiz id not found"})
         }
 
         updates.forEach((update) => quiz[update] = req.body[update])
@@ -100,17 +85,8 @@ router.patch('/quizzes/:id', auth, async (req, res) => {
 })
 
 router.get('/quizzes', auth, async (req, res) => {
-    // const match={}
-    // const sort = {}
+    console.log("req.query:",req.query)
 
-    // if(req.query.completed){
-    //     match.completed = req.query.completed==='true'
-    // }
-
-    // if(req.query.sortBy){
-    //     const parts = req.query.sortBy.split(':')
-    //     sort[parts[0]]= parts[1]==='desc'?-1:1
-    // }
     let find = {}
 
     if (req.query.title) {
@@ -132,8 +108,8 @@ router.get('/quizzes', auth, async (req, res) => {
             .limit(parseInt(req.query.limit))
             .select(select)
 
-        for(let i=0;i<quizzes.length;i++){
-            await quizzes[i].populate('ownerInfo','name').execPopulate()
+        for (let i = 0; i < quizzes.length; i++) {
+            await quizzes[i].populate('ownerInfo', 'name').execPopulate()
             await quizzes[i].populate('submissions').execPopulate()
         }
 
@@ -164,7 +140,10 @@ router.get('/quizzes', auth, async (req, res) => {
 
 router.get('/quizzes/:id', auth, async (req, res) => {
     try {
-        // console.log(req.params.id)
+        console.log("req.params.id:",req.params.id)
+
+
+
         let quiz = await Quiz.findOne({_id: req.params.id})
         if (!quiz) {
             return res.status(404).send({message: "Quiz id not found"})
@@ -200,6 +179,10 @@ router.get('/quizzes/:id', auth, async (req, res) => {
 })
 
 router.post('/quizzes/:id', auth, async (req, res) => {
+    console.log("req.body.userSubmissions:",req.body.userSubmissions)
+    console.log("req.params.id:",req.params.id)
+
+
     let userSubmissions = req.body.userSubmissions
 
     let correct = []
@@ -211,50 +194,49 @@ router.post('/quizzes/:id', auth, async (req, res) => {
 
         let marks = 0;
 
-        quiz.questions.forEach((question)=>{
-            let userSubmissionOfQuestion = userSubmissions.filter((userSubmission)=>{
-                return question._id.toString()===userSubmission.questionId
+        quiz.questions.forEach((question) => {
+            let userSubmissionOfQuestion = userSubmissions.filter((userSubmission) => {
+                return question._id.toString() === userSubmission.questionId
             })[0]
 
             // console.log(userSubmissionOfQuestion)
 
-            if(question.type===macro.questionTypes.MCQ){
+            if (question.type === macro.questionTypes.MCQ) {
                 let correctAnswerCount = question.answers.length
 
                 let userCorrectedCount = 0;
 
-                userSubmissionOfQuestion.answers.forEach((answer)=>{
-                    if(question.answers.includes(answer)){
+                userSubmissionOfQuestion.answers.forEach((answer) => {
+                    if (question.answers.includes(answer)) {
                         userCorrectedCount++;
-                    }else{
+                    } else {
                         userCorrectedCount = -1;
                     }
                 })
 
-                if(userCorrectedCount===correctAnswerCount){
+                if (userCorrectedCount === correctAnswerCount) {
                     correct.push(mongoose.Types.ObjectId(question._id))
-                    marks+=question.marks
-                }else{
+                    marks += question.marks
+                } else {
                     incorrect.push(mongoose.Types.ObjectId(question._id))
                 }
 
-            }else if(question.type===macro.questionTypes.SINGLE){
-                if(question.answers.includes(userSubmissionOfQuestion.answers[0])){
+            } else if (question.type === macro.questionTypes.SINGLE) {
+                if (question.answers.includes(userSubmissionOfQuestion.answers[0])) {
                     correct.push(mongoose.Types.ObjectId(question._id))
-                    marks+=question.marks
-                }else{
+                    marks += question.marks
+                } else {
                     incorrect.push(mongoose.Types.ObjectId(question._id))
                 }
-            }else if(question.type===macro.questionTypes.TEXT){
-                if(question.answers.includes(userSubmissionOfQuestion.answers[0])){
+            } else if (question.type === macro.questionTypes.TEXT) {
+                if (question.answers.includes(userSubmissionOfQuestion.answers[0])) {
                     correct.push(mongoose.Types.ObjectId(question._id))
-                    marks+=question.marks
-                }else{
+                    marks += question.marks
+                } else {
                     incorrect.push(mongoose.Types.ObjectId(question._id))
                 }
             }
         })
-
 
 
         userSubmissions.forEach((submission) => {
@@ -282,18 +264,20 @@ router.post('/quizzes/:id', auth, async (req, res) => {
 
 })
 
-router.post('/quizzes/review/:id',auth,async (req,res)=>{
-    try{
+router.post('/quizzes/review/:id', auth, async (req, res) => {
+    console.log("req.params.id:",req.params.id)
+
+    try {
         let submission = await Submission.findOne({_id: req.params.id})
-        if(!submission){
-            return res.status(404).send({message:"Submission id not found"})
+        if (!submission) {
+            return res.status(404).send({message: "Submission id not found"})
         }
         console.log(req.body.rating)
-        submission.rating=req.body.rating;
+        submission.rating = req.body.rating;
 
         await submission.save()
         res.send(submission)
-    }catch (e){
+    } catch (e) {
         console.log(e)
         return res.status(400).send()
     }
