@@ -8,8 +8,6 @@ const auth = require('../middleware/auth')
 const router = new express.Router()
 const macro = require('../macros/index')
 
-const firebaseStorage = require('../db/firebaseConfig')
-
 router.post('/quizzes', auth, async (req, res) => {
     console.log("req.body:",req.body)
 
