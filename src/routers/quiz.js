@@ -9,8 +9,8 @@ const router = new express.Router()
 const macro = require('../macros/index')
 
 router.post('/quizzes', auth, async (req, res) => {
-    console.log("req.body:",req.body)
 
+    console.log("req.body:",req.body)
 
     const quizData = {...req.body, owner: req.user._id};
     quizData.startTime = new Date(quizData.startTime * 1000)
@@ -247,14 +247,14 @@ router.post('/quizzes/:id', auth, async (req, res) => {
             submissions: userSubmissions,
             correct: correct,
             incorrect: incorrect,
-            marks: marks
+            marks: marks,
         }
 
         // console.log(finalSubmission)
         let submission = new Submission(finalSubmission)
         await submission.save()
 
-        return res.status(201).send(submission)
+        return res.status(201).send({...submission.toObject(),responses: quiz.responses})
     } catch (e) {
         console.log(e)
         return res.status(500).send()
