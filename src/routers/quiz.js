@@ -13,7 +13,11 @@ router.post('/quizzes', auth, async (req, res) => {
     console.log("req.body:",req.body)
 
     const quizData = {...req.body, owner: req.user._id};
-    quizData.startTime = new Date(quizData.startTime * 1000)
+
+    if(quizData.startTime) {
+        quizData.startTime = new Date(quizData.startTime * 1000)
+    }
+
 
     const quiz = new Quiz(quizData)
 
